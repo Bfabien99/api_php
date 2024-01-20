@@ -24,4 +24,28 @@
 
             return self::$readDBConnection;
         }
+
+        public static function FilDB():void
+        {
+            $con = self::connectWriteDB();
+            for($i=1;$i<=100;$i++){
+                $r = rand(1, 100);
+                if($r%2==0){
+                    $c = 'Y';
+                }else{
+                    $c = 'N';
+                }
+                $query = $con->prepare("INSERT INTO tbltasks(title, description, deadline, completed) VALUES('title{$i}', 'description{$i}', NOW(), '$c')");
+                $query->execute();
+
+                $rowCount = $query->rowCount();
+
+                if($rowCount != 0){
+                    error_log("task $i added!");
+                }else{
+                    error_log("x task $i not added! x");
+                }
+            }
+            error_log("task finished!");
+        }
     }
