@@ -339,7 +339,56 @@
             }
         }
         elseif($_SERVER['REQUEST_METHOD'] === 'POST'){
-        
+            try{
+                if($_SERVER['CONTENT_TYPE'] !== "application/json"){
+                    $response = new Response();
+                    $response->setHttpStatusCode(400);
+                    $response->setSuccess(false);
+                    $response->addMessage("Content type header is not set to JSON!");
+                    $response->send();
+                    exit;
+                }
+
+                $rawPostData = file_get_contents("php://input");
+
+                if(!$jsonData = json_decode($rawPostData)){
+                    $response = new Response();
+                    $response->setHttpStatusCode(400);
+                    $response->setSuccess(false);
+                    $response->addMessage("Request body is not a valid JSON!");
+                    $response->send();
+                    exit;
+                }
+
+                if(!isset($jsonData->title) || !isset($jsonData->completed)){
+                    $response = new Response();
+                    $response->setHttpStatusCode(400);
+                    $response->setSuccess(false);
+                    (!isset($jsonData->title)) ? $response->addMessage("Title field is mandatoryand must be provided!"):false;
+                    (!isset($jsonData->completed)) ? $response->addMessage("Completed field is mandatoryand must be provided!"):false;
+                    $response->send();
+                    exit;
+                }
+
+                $newTask = new Task(null, $jsonData->title, $jsonData->description, $jsonData->deadline, $jsonData->completed);
+            }
+            catch(PDOException $pDOException){
+                error_log("Connection error - ". $pDOException->getMessage(), 0);
+                $response = new Response();
+                $response->setHttpStatusCode(500);
+                $response->setSuccess(false);
+                $response->addMessage("Database connection error!");
+                $response->send();
+                exit;
+            }catch(TaskException $taskException){
+                error_log("Database query error - ". $taskException->getMessage(), 0);
+                $response = new Response();
+                $response->setHttpStatusCode(500);
+                $response->setSuccess(false);
+                $response->addMessage("Failed to get Task!");
+                $response->send();
+                exit;
+            }
         }
         else{
             $response = new Response();
